@@ -5,6 +5,7 @@ using System.Xml;
 using Inedo.BuildMaster;
 using Inedo.BuildMaster.Extensibility.Actions;
 using Inedo.BuildMaster.Extensibility.Actions.Testing;
+using Inedo.BuildMaster.Extensibility.Agents;
 using Inedo.BuildMaster.Web;
 
 namespace Inedo.BuildMasterExtensions.JUnit
@@ -57,22 +58,24 @@ namespace Inedo.BuildMasterExtensions.JUnit
         protected override void RunTests()
         {
             //Output jars
-            string bmjPath = Path.Combine(RemoteConfiguration.TempDirectory, "BuildMaster.jar");
-            StreamToDisk(
-                GetType().Assembly.GetManifestResourceStream("Inedo.BuildMasterExtensions.JUnit.BuildMaster.jar"),
-                bmjPath);
+            var bmjPath = Path.Combine(
+                this.Context.Agent.GetService<IFileOperationsExecuter>().GetBaseWorkingDirectory(),
+                "ExtTemp",
+                "JUnit",
+                "BuildMaster.jar"
+            );
 
             // Build file list
             var testClasses = Directory.GetFiles(
-                RemoteConfiguration.SourceDirectory,
-                SearchPattern,
+                this.Context.SourceDirectory,
+                this.SearchPattern,
                 SearchOption.AllDirectories);
             for (int i = 0; i < testClasses.Length; i++)
             {
                 if (testClasses[i].EndsWith(".class"))
                     testClasses[i] = testClasses[i].Substring(0, testClasses[i].Length - ".class".Length);
                 testClasses[i] = testClasses[i]
-                    .Substring(this.RemoteConfiguration.SourceDirectory.Length)
+                    .Substring(this.Context.SourceDirectory.Length)
                     .TrimStart(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar)
                     .Replace(Path.DirectorySeparatorChar, '.')
                     .Replace(Path.AltDirectorySeparatorChar, '.');
@@ -84,15 +87,15 @@ namespace Inedo.BuildMasterExtensions.JUnit
 
             // Capture Command Output
             standardOut = new StringBuilder();
-            ExecuteCommandLine(
-                JavaPath,
+            this.ExecuteCommandLine(
+                this.JavaPath,
                 string.Format(
                     "-cp .;{0} -Djava.ext.dirs=\"{1}\" {2} \"@{3}\"",
                     bmjPath,
                     ExtensionDirectories == null ? null : string.Join(";", ExtensionDirectories),
                     "inedo.buildmasterextensions.java.jUnitAction",
                     FILE_testClasses),
-                this.RemoteConfiguration.SourceDirectory);
+                this.Context.SourceDirectory);
 
             // Load as XML
             var testResults = new XmlDocument();
@@ -104,7 +107,7 @@ namespace Inedo.BuildMasterExtensions.JUnit
                 return;
             }
 
-            var testTime = DateTime.Now;
+            var testTime = DateTime.UtcNow;
 
             // Log Results
             foreach (XmlElement tr in testResults.SelectNodes("TestResults/TestResult"))
@@ -162,18 +165,6 @@ namespace Inedo.BuildMasterExtensions.JUnit
         protected override void LogProcessOutputData(string data)
         {
             standardOut.AppendLine(data);
-        }
-
-        private static void StreamToDisk(Stream stream, string path)
-        {
-            using (Stream fs = new FileStream(path, FileMode.Create))
-            {
-                var buffer = new byte[32 * 1024];
-                int read;
-                while ((read = stream.Read(buffer, 0, buffer.Length)) > 0)
-                    fs.Write(buffer, 0, read);
-                fs.Close();
-            }
         }
     }
 }

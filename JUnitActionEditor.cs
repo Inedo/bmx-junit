@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Text.RegularExpressions;
 using System.Web.UI.WebControls;
-using Inedo.BuildMaster.Data;
 using Inedo.BuildMaster.Extensibility.Actions;
 using Inedo.BuildMaster.Web.Controls;
 using Inedo.BuildMaster.Web.Controls.Extensions;
@@ -49,7 +48,7 @@ namespace Inedo.BuildMasterExtensions.JUnit
             {
                 Required = true,
                 Width = Unit.Pixel(300),
-                Text = this.PlanRow[TableDefs.PlanActionGroups_Extended.Deployable_Name].ToString()
+                Text = this.Plan.Deployable_Name
             };
 
             this.ctlJavaPath = new SourceControlFileFolderPicker { ServerId = this.ServerId };
