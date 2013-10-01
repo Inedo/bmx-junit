@@ -1,0 +1,5 @@
+inedo.buildmasterextensions.java.jUnitAction 
+inedo.buildmasterextensions.java.DummyTest
+inedo.buildmasterextensions.java.Dummy2Test
+inedo.buildmasterextensions.java.DummyNotATest
+invalid.className
